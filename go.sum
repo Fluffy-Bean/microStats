@@ -1,0 +1,8 @@
+github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 h1:El6M4kTTCOh6aBiKaUGG7oYTSPP8MxqL4YI3kZKwcP4=
+github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3pAXIBCelhxNneeOaAeabZDe5s4K6zSpQ=
+tinygo.org/x/drivers v0.27.0 h1:TEGk1lQvEhXxfvpEhUu+pwmCnhtldPI+hpHlO9VYixI=
+tinygo.org/x/drivers v0.27.0/go.mod h1:q/mU8G/wz821p8xXqbkBACOlmZFDHXd//DnYnCW+dDQ=
+tinygo.org/x/tinydraw v0.4.0 h1:U9V0mHz8/jPShKjlh199vCfq1ARFyUOD1b+FfqIwV8c=
+tinygo.org/x/tinydraw v0.4.0/go.mod h1:WCV/EMljTv8w04iAxjv+fRD6/4ffx0afATYeJlN90Yo=
+tinygo.org/x/tinyfont v0.3.0 h1:HIRLQoI3oc+2CMhPcfv+Ig88EcTImE/5npjqOnMD4lM=
+tinygo.org/x/tinyfont v0.3.0/go.mod h1:+TV5q0KpwSGRWnN+ITijsIhrWYJkoUCp9MYELjKpAXk=
