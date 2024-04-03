@@ -1,2 +1,4 @@
-pyserial
-spotipy
+pyserial~=3.5
+spotipy~=2.23.0
+requests~=2.31.0
+pillow~=10.3.0

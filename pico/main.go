@@ -52,8 +52,7 @@ func main() {
 func scanSerial() {
 	const (
 		sleepTime           = time.Millisecond * 100
-		initialWait         = time.Second * 5
-		dataTransferTimeout = time.Second * 10
+		dataTransferTimeout = time.Second * 4
 	)
 
 	type track struct {
