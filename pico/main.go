@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"machine"
+	"strconv"
 	"time"
 
 	"tinygo.org/x/drivers/ssd1306"
@@ -49,6 +50,12 @@ func main() {
 }
 
 func scanSerial() {
+	const (
+		sleepTime           = time.Millisecond * 100
+		initialWait         = time.Second * 5
+		dataTransferTimeout = time.Second * 10
+	)
+
 	type track struct {
 		Name   string `json:"name"`
 		Album  string `json:"album"`
@@ -62,44 +69,94 @@ func scanSerial() {
 	}
 
 	for {
-		// wait for a byte to be available
+		var (
+			err       error
+			buffer    []byte
+			bufferLen int
+		)
+
+		// Wait for a byte to be available
 		for machine.Serial.Buffered() == 0 {
-			LedPin.High()
-			time.Sleep(time.Millisecond * 100)
-			LedPin.Low()
+			time.Sleep(sleepTime)
 		}
 
-		var buffer []byte
+		// Get initial hello data
 		for machine.Serial.Buffered() > 0 {
-			b, err := machine.Serial.ReadByte()
+			readByte, err := machine.Serial.ReadByte()
 			if err != nil {
+				// Error occurred, meaning json will probably be malformed
 				println("Error reading byte: ", err)
-				break // Error occurred, meaning json will probably be malformed
+				continue
 			}
-			buffer = append(buffer, b)
+			buffer = append(buffer, readByte)
 		}
 
-		var t data
-		err := json.Unmarshal(buffer, &t)
+		// check if data is #numbers# format
+		if buffer[0] != '#' && buffer[len(buffer)-1] != '#' {
+			println("Hello data not in correct format")
+			continue
+		}
+		bufferLen, err = strconv.Atoi(string(buffer[1 : len(buffer)-1]))
 		if err != nil {
+			println("Hello does not contain numbers")
+			continue
+		}
+
+		// Clear buffer and let the master know we're ready
+		buffer = nil
+		println("OK")
+
+		// Start reading data
+		now := time.Now()
+		for len(buffer) < bufferLen {
+			// Wait a moment for the data to start coming in
+			//time.Sleep(time.Millisecond * 1)
+
+			// read all available bytes
+			for machine.Serial.Buffered() > 0 {
+				readByte, err := machine.Serial.ReadByte()
+				if err != nil {
+					// Error occurred, meaning json will probably be malformed
+					println("Error reading byte: ", err)
+					continue
+				}
+				buffer = append(buffer, readByte)
+			}
+
+			if time.Since(now) > dataTransferTimeout {
+				break
+			}
+		}
+		if time.Since(now) > dataTransferTimeout {
+			println("Timed out data transfer")
+			println(string(buffer))
+			//continue
+		}
+		if len(buffer) != bufferLen {
+			println("Buffer length does not match expected length, trying anyway")
+			//continue
+		}
+
+		var parsedTrackData data
+		if err := json.Unmarshal(buffer, &parsedTrackData); err != nil {
 			println("Error unmarshalling JSON: ", err)
 			println(string(buffer))
 			continue
 		}
 
-		if t.Track != (track{}) {
+		if parsedTrackData.Track != (track{}) {
 			println("Setting track data")
-			length, err := time.ParseDuration(t.Track.Length)
+			length, err := time.ParseDuration(parsedTrackData.Track.Length)
 			if err != nil {
 				println("Error parsing duration: ", err)
 				continue
 			}
-			CurrentTrack = NewTrack(t.Track.Name, t.Track.Album, t.Track.Artist, length)
+			CurrentTrack = NewTrack(parsedTrackData.Track.Name, parsedTrackData.Track.Album, parsedTrackData.Track.Artist, length)
 		}
 
-		if t.Progress != "" {
+		if parsedTrackData.Progress != "" {
 			println("Setting progress data")
-			progress, err := time.ParseDuration(t.Progress)
+			progress, err := time.ParseDuration(parsedTrackData.Progress)
 			if err != nil {
 				println("Error parsing progress: ", err)
 				continue
@@ -107,9 +164,9 @@ func scanSerial() {
 			CurrentTrack.SetProgress(time.Now().Add(-progress))
 		}
 
-		if t.Art != nil {
+		if parsedTrackData.Art != nil {
 			println("Setting art data")
-			CurrentTrack.SetArt(t.Art)
+			CurrentTrack.SetArt(parsedTrackData.Art)
 		}
 	}
 }
